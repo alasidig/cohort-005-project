@@ -1,4 +1,10 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useCallback,
+  useState,
+  type ReactNode,
+} from "react";
 
 declare global {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- augmenting Window needs an interface
@@ -18,6 +24,8 @@ type YouTubePlayerProps = {
   trackingEnabled: boolean;
   autoplay?: boolean;
   onToggleAutoplay?: () => void;
+  /** Rendered inside the player's panel, under the progress bar. */
+  children?: ReactNode;
 };
 
 function extractVideoId(url: string): string | null {
@@ -72,6 +80,7 @@ export function YouTubePlayer({
   trackingEnabled,
   autoplay = false,
   onToggleAutoplay,
+  children,
 }: YouTubePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YT.Player | null>(null);
@@ -210,56 +219,64 @@ export function YouTubePlayer({
 
   if (!videoId) {
     return (
-      <div className="mb-8 flex aspect-video items-center justify-center rounded-lg bg-muted">
-        <p className="text-muted-foreground">
-          Invalid or unsupported video URL
-        </p>
+      <div className="mb-8 overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="flex aspect-video items-center justify-center bg-muted">
+          <p className="text-muted-foreground">
+            Invalid or unsupported video URL
+          </p>
+        </div>
+        {children && <div className="border-t bg-muted/30">{children}</div>}
       </div>
     );
   }
 
   return (
-    <div className="mb-8">
-      <div className="aspect-video overflow-hidden rounded-lg">
+    <div className="mb-8 overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="aspect-video bg-black">
         <div ref={containerRef} className="h-full w-full" />
       </div>
-      {trackingEnabled && (
-        <div className="mt-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Watch progress</span>
-            <span>{progress}%</span>
-          </div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      )}
-      {onToggleAutoplay && (
-        <div className="mt-2 flex items-center justify-end">
-          {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- the label wraps a button, which is labelable */}
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-            Autoplay
-            <button
-              type="button"
-              role="switch"
-              aria-checked={autoplay}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-colors ${
-                autoplay ? "border-primary bg-primary" : "border-input bg-muted"
-              }`}
-              onClick={onToggleAutoplay}
-            >
-              <span
-                className={`inline-block size-3.5 transform rounded-full bg-background shadow-sm transition-transform ${
-                  autoplay ? "translate-x-5" : "translate-x-0.5"
+      {(trackingEnabled || onToggleAutoplay) && (
+        <div className="flex items-center gap-4 border-t px-4 py-2.5 text-xs text-muted-foreground">
+          {trackingEnabled && (
+            <div className="flex flex-1 items-center gap-3">
+              <span className="shrink-0">Watch progress</span>
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <span className="w-9 shrink-0 text-right tabular-nums">
+                {progress}%
+              </span>
+            </div>
+          )}
+          {onToggleAutoplay && (
+            // oxlint-disable-next-line jsx-a11y/label-has-associated-control -- the label wraps a button, which is labelable
+            <label className="ml-auto flex shrink-0 cursor-pointer items-center gap-2">
+              Autoplay
+              <button
+                type="button"
+                role="switch"
+                aria-checked={autoplay}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-colors ${
+                  autoplay
+                    ? "border-primary bg-primary"
+                    : "border-input bg-muted"
                 }`}
-              />
-            </button>
-          </label>
+                onClick={onToggleAutoplay}
+              >
+                <span
+                  className={`inline-block size-3.5 transform rounded-full bg-background shadow-sm transition-transform ${
+                    autoplay ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </label>
+          )}
         </div>
       )}
+      {children && <div className="border-t bg-muted/30">{children}</div>}
     </div>
   );
 }
